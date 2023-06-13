@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Exit Time Calculator</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz@9..144&family=Montaga&family=Montserrat:wght@100;400;900&family=Noto+Sans+Hebrew:wght@300&family=Raleway&family=Righteous&family=Roboto:wght@300&family=Sacramento&family=Ubuntu&family=Urbanist:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h1>Exit Time Calculator</h1>
+
+    <div class="form-container">
+      <label for="arrivalTime">Arrival Time:</label>
+      <input type="time" id="arrivalTime" />
+      <button class="btn" type="button" onclick="calculateExitTime()">Calculate Exit Time</button>
+    </div>
+
+    <div class="result-container">
+      <p id="currentDay"></p>
+      <p id="exitTime"></p>
+    </div>
+
+    <div class="history-container">
+      <h2>Arrival and Exit Time History</h2>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Arrival Time</th>
+            <th>Exit Time</th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function calculateExitTime() {
+      const daysOfWork = {
+        0: 9.1,  // Sunday
+        1: 9.1,  // Monday
+        2: 9.1,  // Tuesday
+        3: 9.1,  // Wednesday
+        4: 8.1   // Thursday
+      };
+
+      const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+      document.getElementById('currentDay').textContent = `Current Day: ${currentDay}`;
+
+      const workingHours = daysOfWork[new Date().getDay()];
+
+      if (workingHours !== undefined) {
+        const arrivalTimeInput = document.getElementById('arrivalTime');
+        const arrivalTime = arrivalTimeInput.value;
+        const [hour, minute] = arrivalTime.split(':');
+
+        const arrival = new Date();
+        arrival.setHours(Number(hour));
+        arrival.setMinutes(Number(minute));
+
+        const exitTime = new Date(arrival.getTime() + workingHours * 60 * 60 * 1000);
+
+        const exitHour = exitTime.getHours();
+        const exitMinute = exitTime.getMinutes();
+
+        const exitTimeOutput = document.getElementById('exitTime');
+        exitTimeOutput.textContent = `Exit Time: ${exitHour.toString().padStart(2, '0')}:${exitMinute.toString().padStart(2, '0')}`;
+
+        // Save to local storage
+        const history = JSON.parse(localStorage.getItem('exitTimeHistory')) || [];
+        const date = new Date().toLocaleDateString('en-US');
+        const arrivalTimeFormatted = `${hour}:${minute}`;
+        const exitTimeFormatted = `${exitHour.toString().padStart(2, '0')}:${exitMinute.toString().padStart(2, '0')}`;
+
+        history.unshift({
+          date,
+          arrivalTime: arrivalTimeFormatted,
+          exitTime: exitTimeFormatted
+        });
+
+        if (history.length > 3) {
+          history.pop();
+        }
+
+        localStorage.setItem('exitTimeHistory', JSON.stringify(history));
+
+        // Update history table
+        const historyTableBody = document.getElementById('historyTableBody');
+        historyTableBody.innerHTML = '';
+
+        for (const entry of history) {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${entry.date}</td><td>${entry.arrivalTime}</td><td>${entry.exitTime}</td>`;
+          historyTableBody.appendChild(row);
+        }
+      } else {
+        alert('Invalid day');
+      }
+    }
+
+    // Load history from local storage on page load
+    window.onload = function() {
+      const history = JSON.parse(localStorage.getItem('exitTimeHistory')) || [];
+      const historyTableBody = document.getElementById('historyTableBody');
+
+      for (const entry of history) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${entry.date}</td><td>${entry.arrivalTime}</td><td>${entry.exitTime}</td>`;
+        historyTableBody.appendChild(row);
+      }
+    }
+  </script>
+</body>
+</html>
